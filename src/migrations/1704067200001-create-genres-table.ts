@@ -1,0 +1,16 @@
+import { DataSource } from 'typeorm';
+
+export async function up(dataSource: DataSource) {
+  await dataSource.query(`
+    CREATE TABLE IF NOT EXISTS genres (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      genre VARCHAR(100) NOT NULL UNIQUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+export async function down(dataSource: DataSource) {
+  await dataSource.query('DROP TABLE IF EXISTS genres');
+}
