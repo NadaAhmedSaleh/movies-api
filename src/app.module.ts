@@ -12,6 +12,7 @@ import { WatchList } from './watchList/watchList.entity';
 import { UserRating } from './userRatings/userRating.entity';
 import { UsersModule } from './users/users.module';
 import { UserRatingsModule } from './userRatings/userRatings.module';
+import { WatchListModule } from './watchList/watchList.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UserRatingsModule } from './userRatings/userRatings.module';
     TypeOrmModule.forFeature([User, Genre, Movie, MovieGenre, WatchList, UserRating]),
     UsersModule,
     UserRatingsModule,
+    WatchListModule,
   ],
   controllers: [AppController],
   providers: [AppService],
