@@ -1,3 +1,5 @@
+import { Movie } from 'src/movies/entities/movie.entity';
+
 export const MOCK_JWT_TOKEN = 'mock.jwt.token';
 
 export const mockRepository = {
@@ -8,4 +10,12 @@ export const mockRepository = {
 
 export const mockJwtService = {
   sign: jest.fn(),
+};
+
+export const mockMovie: Movie = {
+  id: 1,
+  name: 'Test Movie',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  movieGenres: [],
 };

@@ -11,6 +11,7 @@ import { MovieGenre } from './movies/entities/movieGenre.entity';
 import { WatchList } from './watchList/watchList.entity';
 import { UserRating } from './userRatings/userRating.entity';
 import { UsersModule } from './users/users.module';
+import { UserRatingsModule } from './userRatings/userRatings.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UsersModule } from './users/users.module';
     TypeOrmModule.forRoot(databaseConfig),
     TypeOrmModule.forFeature([User, Genre, Movie, MovieGenre, WatchList, UserRating]),
     UsersModule,
+    UserRatingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
