@@ -17,12 +17,13 @@ services:
       dockerfile: Dockerfile.dev
     depends_on:
       - mysql
+    env_file:
+      - .env
     environment:
       - DB_HOST=mysql
       - DB_USERNAME=root
       - DB_PASSWORD=rootpassword
       - DB_DATABASE=movies-db
-      - TMDB_TOKEN=${TMDB_TOKEN}
     volumes:
       - ./src:/app/src
     command: npm run migration:run
@@ -33,12 +34,8 @@ services:
       dockerfile: Dockerfile.dev
     depends_on:
       - migrations
-    environment:
-      - DB_HOST=mysql
-      - DB_USERNAME=root
-      - DB_PASSWORD=rootpassword
-      - DB_DATABASE=movies-db
-      - TMDB_TOKEN=${TMDB_TOKEN}
+    env_file:
+      - .env
     ports:
       - "8080:8080"
     volumes:

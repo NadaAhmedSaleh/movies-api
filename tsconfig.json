@@ -3,6 +3,9 @@
     "module": "commonjs",
     "target": "ES2023",
     "baseUrl": "./",
+    "paths": {
+      "src/*": ["src/*"]
+    },
     "skipLibCheck": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
