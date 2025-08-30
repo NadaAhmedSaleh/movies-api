@@ -13,12 +13,21 @@ import {
 } from './utils/mock';
 import { SortBy, SortOrder } from '../../../src/movies/dtos';
 import { Repository } from 'typeorm';
+import { RedisService } from '../../../src/common/services/redis.service';
 
 describe('MoviesService', () => {
   let service: MoviesService;
   let mockMovieRepository: jest.Mocked<Repository<Movie>>;
+  let mockRedisService: jest.Mocked<RedisService>;
 
   beforeEach(async () => {
+    const mockRedisServiceInstance = {
+      get: jest.fn(),
+      set: jest.fn(),
+      del: jest.fn(),
+      exists: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MoviesService,
@@ -26,11 +35,16 @@ describe('MoviesService', () => {
           provide: getRepositoryToken(Movie),
           useValue: mockRepository,
         },
+        {
+          provide: RedisService,
+          useValue: mockRedisServiceInstance,
+        },
       ],
     }).compile();
 
     service = module.get<MoviesService>(MoviesService);
     mockMovieRepository = module.get(getRepositoryToken(Movie));
+    mockRedisService = module.get(RedisService);
   });
 
   afterEach(() => {
@@ -108,12 +122,15 @@ describe('MoviesService', () => {
       expect(result.pagination).toBeDefined();
     });
 
-    it('should handle rating sorting correctly', async () => {
+    it('should handle rating sorting correctly with cache miss', async () => {
       const ratingFilters = {
         ...mockFilters,
         sortBy: SortBy.RATING,
         sortOrder: SortOrder.DESC,
       };
+
+      // Mock cache miss
+      mockRedisService.get.mockResolvedValue(null);
 
       mockMovieRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
       mockQueryBuilder.getMany.mockResolvedValue([mockMovie1, mockMovie2, mockMovie3]);

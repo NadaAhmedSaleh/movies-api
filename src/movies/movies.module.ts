@@ -6,12 +6,14 @@ import { Movie } from './entities/movie.entity';
 import { UserRatingsModule } from '../userRatings/userRatings.module';
 import { WatchListModule } from '../watchList/watchList.module';
 import { SharedJwtModule } from '../common/modules/jwt.module';
+import { RedisModule } from '../common/modules/redis.module';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Movie]),
     SharedJwtModule,
+    RedisModule,
   ],
   controllers: [MoviesController],
   providers: [MoviesService, JwtAuthGuard],

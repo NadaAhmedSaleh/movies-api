@@ -3,13 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Movie } from './entities/movie.entity';
 import { AuthenticatedMovieFiltersDto, SortBy, SortOrder } from './dtos';
-import { WatchList } from '../watchList/watchList.entity';
+import { RedisService } from '../common/services/redis.service';
+import { ALL_MOVIES_CACHE_KEY } from './utils/constants';
 
 @Injectable()
 export class MoviesService {
   constructor(
     @InjectRepository(Movie)
     private movieRepository: Repository<Movie>,
+    private redisService: RedisService,
   ) {}
 
   async getMovieById(id: number): Promise<Movie> {
@@ -80,6 +82,67 @@ export class MoviesService {
         page: Math.floor(offset / limit) + 1,
         totalPages: Math.ceil(total / limit),
         hasNext: offset + limit < total,
+        hasPrevious: offset > 0,
+      },
+    };
+  }
+
+  private async handleRatingSorting(
+    queryBuilder: any,
+    filters: AuthenticatedMovieFiltersDto,
+    userId?: number,
+  ) {
+    // Try to get all movies from cache first
+    const cachedMovies = await this.redisService.get(ALL_MOVIES_CACHE_KEY);
+    let allMovies;
+
+    if (cachedMovies) {
+      allMovies = JSON.parse(cachedMovies);
+      console.log('Using cached movies');
+    } else {
+      // Get all movies without pagination for rating sorting
+      allMovies = await queryBuilder.getMany();
+      // Cache all movies for 1 day
+      await this.redisService.set(
+        ALL_MOVIES_CACHE_KEY,
+        JSON.stringify(allMovies),
+        24 * 60 * 60,
+      );
+      console.log('Cached movies for 1 day');
+    }
+
+    // Get ratings and watch list for all movies
+    const movieIds = allMovies.map((movie) => movie.id);
+    const [ratingsMap, watchListMap] = await Promise.all([
+      this.getRatingsForMovies(movieIds),
+      userId
+        ? this.getWatchListForMovies(movieIds, userId)
+        : Promise.resolve(new Map()),
+    ]);
+
+    // Format and sort by rating
+    let formattedMovies = this.formatMovies(
+      allMovies,
+      ratingsMap,
+      watchListMap,
+      userId,
+      filters,
+    );
+
+    // Apply pagination after sorting
+    const limit = filters.limit || 20;
+    const offset = filters.offset || 0;
+    const paginatedMovies = formattedMovies.slice(offset, offset + limit);
+
+    return {
+      movies: paginatedMovies,
+      pagination: {
+        total: formattedMovies.length,
+        limit,
+        offset,
+        page: Math.floor(offset / limit) + 1,
+        totalPages: Math.ceil(formattedMovies.length / limit),
+        hasNext: offset + limit < formattedMovies.length,
         hasPrevious: offset > 0,
       },
     };
@@ -156,52 +219,6 @@ export class MoviesService {
       .where('m.id IN (:...movieIds)', { movieIds })
       .getRawMany();
     return new Map(watchList.map((r) => [r.movieId, r.inWatchList == 1]));
-  }
-
-  private async handleRatingSorting(
-    queryBuilder: any,
-    filters: AuthenticatedMovieFiltersDto,
-    userId?: number,
-  ) {
-    // Get all movies first (no pagination)
-    const allMovies = await queryBuilder.getMany();
-    const total = allMovies.length;
-
-    // Get ratings for all movies
-    const movieIds = allMovies.map((movie) => movie.id);
-    const [ratingsMap, watchListMap] = await Promise.all([
-      this.getRatingsForMovies(movieIds),
-      userId
-        ? this.getWatchListForMovies(movieIds, userId)
-        : Promise.resolve(new Map()),
-    ]);
-
-    // Format and sort by rating
-    let formattedMovies = this.formatMovies(
-      allMovies,
-      ratingsMap,
-      watchListMap,
-      userId,
-      filters,
-    );
-
-    // Apply pagination after sorting
-    const limit = filters.limit || 20;
-    const offset = filters.offset || 0;
-    const paginatedMovies = formattedMovies.slice(offset, offset + limit);
-
-    return {
-      movies: paginatedMovies,
-      pagination: {
-        total,
-        limit,
-        offset,
-        page: Math.floor(offset / limit) + 1,
-        totalPages: Math.ceil(total / limit),
-        hasNext: offset + limit < total,
-        hasPrevious: offset > 0,
-      },
-    };
   }
 
   private formatMovies(

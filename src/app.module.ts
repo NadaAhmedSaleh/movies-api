@@ -13,6 +13,8 @@ import { UserRating } from './userRatings/userRating.entity';
 import { UsersModule } from './users/users.module';
 import { UserRatingsModule } from './userRatings/userRatings.module';
 import { WatchListModule } from './watchList/watchList.module';
+import { MoviesModule } from './movies/movies.module';
+import { RedisModule } from './common/modules/redis.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { WatchListModule } from './watchList/watchList.module';
     UsersModule,
     UserRatingsModule,
     WatchListModule,
+    MoviesModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

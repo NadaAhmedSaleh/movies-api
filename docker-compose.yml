@@ -28,12 +28,21 @@ services:
       - ./src:/app/src
     command: npm run migration:run
 
+  redis:
+    image: redis:7-alpine
+    container_name: movie-api-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
   app:
     build:
       context: .
       dockerfile: Dockerfile.dev
     depends_on:
       - migrations
+      - redis
     env_file:
       - .env
     ports:
@@ -43,3 +52,4 @@ services:
 
 volumes:
   mysql_data:
+  redis_data:
